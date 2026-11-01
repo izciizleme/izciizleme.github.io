@@ -1,14 +1,44 @@
 <!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>İzci</title>
-<style>body{margin:0;min-height:100vh;background:#14281d;color:#fff;font:16px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}.c{width:100%;max-width:420px;background:#1f3d2c;border-radius:20px;padding:22px 18px}h1{margin:0 0 4px;font-size:26px}small{color:#95d5b2}h2{font-size:22px;margin:14px 0 2px}p{font:13px monospace;color:#d8f3dc;margin:4px 0}a,button{display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;border:0;border-radius:14px;padding:15px;margin-top:10px;font:700 16px system-ui;background:#ffffff22;color:#fff}.g{background:#2ee66b;color:#00210f;font-size:18px;padding:18px}.h{display:none}.t{font:13px system-ui;color:#fffc;line-height:1.5}</style>
-<div class=c><h1>İzci</h1><small>Sinyalin yoksa da yolunu bul</small>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>body{margin:0;min-height:100vh;background:#14281d;color:#fff;font:16px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}.c{width:100%;max-width:420px;background:#1f3d2c;border-radius:20px;padding:22px 18px}h1{margin:0 0 4px;font-size:26px}small{color:#95d5b2}h2{font-size:22px;margin:14px 0 2px}p{font:13px monospace;color:#d8f3dc;margin:4px 0}a,button{display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;border:0;border-radius:14px;padding:15px;margin-top:10px;font:700 16px system-ui;background:#ffffff22;color:#fff}.g{background:#2ee66b;color:#00210f;font-size:18px;padding:18px}.h{display:none}.t{font:13px system-ui;color:#fffc;line-height:1.5}
+#lv{position:fixed;inset:0;display:none;flex-direction:column;background:#0b0f0d;padding:0}#lm{flex:1}#li{padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#0b0f0d;color:#fff;font:14px system-ui,sans-serif;line-height:1.5}#li b{font-size:17px}#li .s{color:#95d5b2;font-size:13px}#li .w{color:#ffd166}#li .row{display:flex;gap:8px}#li a{margin-top:8px;padding:11px;font-size:14px}
+.pin{font-size:30px;filter:drop-shadow(0 2px 3px #000)}</style>
+<div class=c id=main><h1>İzci</h1><small>Sinyalin yoksa da yolunu bul</small>
 <div id=y class=h><h2 id=n></h2><p id=k></p><p id=f></p><a id=o class=g>▶ İzci'de yönlendirmeyi başlat</a><a id=m>🗺 Google Haritalar'da aç</a><button id=b>📋 İzci bağlantısını kopyala</button>
 <p class=t>İzci yüklüyse yeşil düğme açar ve rotayı kurar, değilse Google Haritalar açılır. Düğme çalışmazsa bağlantıyı kopyalayıp İzci'de ARA kutusuna yapıştır.</p></div>
-<div id=z class=h><h2>Paylaşılan konum ve rota bağlantıları</h2><p class=t>Bu adres, İzci uygulamasından paylaşılan konum ve rota bağlantılarını açar. Birinin sana gönderdiği bağlantıya dokunduğunda buradan İzci açılır ve yönlendirme kurulur.</p><p class=t>Bu sayfayı bağlantı olmadan açtığın için gösterilecek bir konum yok.</p></div></div>
-<script>var q=new URLSearchParams(location.search),a=+q.get('lat'),l=+q.get('lng'),nm=(q.get('name')||'Paylaşılan konum').slice(0,120),md=q.get('mode'),fa=+q.get('flat'),fo=+q.get('flng'),$=function(i){return document.getElementById(i)};
+<div id=z class=h><h2>Paylaşılan konum ve rota bağlantıları</h2><p class=t>Bu adres, İzci uygulamasından paylaşılan konum, rota ve canlı konum bağlantılarını açar. Birinin sana gönderdiği bağlantıya dokunduğunda buradan İzci açılır ve yönlendirme kurulur.</p><p class=t>Bu sayfayı bağlantı olmadan açtığın için gösterilecek bir konum yok.</p></div></div>
+<div id=lv><div id=lm></div><div id=li>Bağlanıyor…</div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>var q=new URLSearchParams(location.search),$=function(i){return document.getElementById(i)};
+var LID=q.get('live'),LDB=q.get('db');
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+if(LID&&/^[a-z0-9]{16,40}$/.test(LID)&&/^[a-z0-9.-]+\.(firebasedatabase\.app|firebaseio\.com)$/.test(LDB||'')){
+ $('main').style.display='none';$('lv').style.display='flex';
+ var map=L.map('lm',{zoomControl:true}).setView([39,35],6);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+ var layer=L.layerGroup().addTo(map),first=true,last=null,timer=null,pinIcon=L.divIcon({className:'',html:'<div class=pin>📍</div>',iconSize:[30,30],iconAnchor:[15,30]});
+ function rem(ms){if(ms>3.2e10)return 'süresiz';var m=Math.max(0,Math.round(ms/60000)),d=Math.floor(m/1440),h=Math.floor(m%1440/60);return d?d+' g '+h+' sa':h?h+' sa '+(m%60)+' dk':m+' dk'}
+ function poll(){
+  fetch('https://'+LDB+'/live/'+LID+'.json').then(function(r){return r.json()}).then(function(j){
+   if(!j||!j.lat||(j.exp&&Date.now()>j.exp)){$('li').innerHTML='<b>Paylaşım sona erdi</b><div class=s>Bu canlı konum durduruldu, süresi doldu ya da bağlantı geçersiz.</div>';clearInterval(timer);return}
+   var ll=[j.lat,j.lng];layer.clearLayers();
+   L.marker(ll,{icon:pinIcon}).addTo(layer);
+   if(j.acc>20)L.circle(ll,{radius:j.acc,weight:1,color:'#ff7b00',fillOpacity:.1}).addTo(layer);
+   if(j.trail&&j.trail.length>1)L.polyline(j.trail.map(function(p){return[p[0],p[1]]}),{color:'#ff7b00',weight:4,opacity:.9}).addTo(layer);
+   last=ll;if(first){first=false;map.setView(ll,16)}
+   var ago=Math.max(0,Math.round((Date.now()-j.t)/1000)),at=ago<90?ago+' sn önce':Math.round(ago/60)+' dk önce';
+   $('li').innerHTML='<div class=row><div style="flex:1"><b>📍 '+esc(j.name||'Canlı konum')+'</b><div class=s>'+at+(ago>300?' <span class=w>(bağlantı kopmuş olabilir)</span>':'')+'</div><div class=s>'+(j.acc?'±'+j.acc+' m · ':'')+(j.spd||0)+' km/sa'+(j.bat!=null?' · 🔋%'+j.bat:'')+(j.exp&&j.exp<Date.now()+3.2e10?' · kalan '+rem(j.exp-Date.now()):'')+'</div></div></div>'+
+    '<a class=g href="https://www.google.com/maps/dir/?api=1&destination='+j.lat+','+j.lng+'" style="background:#2ee66b;color:#00210f">🚗 Google Haritalar ile yol tarifi</a>';
+  }).catch(function(){});
+ }
+ poll();timer=setInterval(poll,6000);
+}else{
+var a=+q.get('lat'),l=+q.get('lng'),nm=(q.get('name')||'Paylaşılan konum').slice(0,120),md=q.get('mode'),fa=+q.get('flat'),fo=+q.get('flng');
 if(['car','foot','bike'].indexOf(md)<0)md='car';
 var hasF=!!(q.get('flat')&&q.get('flng')&&isFinite(fa)&&isFinite(fo)&&Math.abs(fa)<=90&&Math.abs(fo)<=180);
 if(!(isFinite(a)&&isFinite(l)&&q.get('lat')&&Math.abs(a)<=90&&Math.abs(l)<=180&&(a||l)))$('z').className='';else{$('y').className='';$('n').textContent=nm;$('k').textContent=(hasF?'Varış: ':'')+a.toFixed(5)+', '+l.toFixed(5);if(hasF)$('f').textContent='Başlangıç: '+fa.toFixed(5)+', '+fo.toFixed(5);
 var s='lat='+a.toFixed(6)+'&lng='+l.toFixed(6)+'&name='+encodeURIComponent(nm)+'&mode='+md+(hasF?'&flat='+fa.toFixed(6)+'&flng='+fo.toFixed(6):''),u='izci://nav?'+s,g='https://maps.google.com/?q='+a.toFixed(6)+','+l.toFixed(6);
 if(hasF)g='https://www.google.com/maps/dir/?api=1&origin='+fa.toFixed(6)+','+fo.toFixed(6)+'&destination='+a.toFixed(6)+','+l.toFixed(6)+'&travelmode='+({car:'driving',foot:'walking',bike:'bicycling'}[md]);
 $('o').href=/android/i.test(navigator.userAgent)?'intent://nav?'+s+'#Intent;scheme=izci;package=com.yuruyus.haritam;S.browser_fallback_url='+encodeURIComponent(g)+';end':u;$('m').href=g;
-$('b').onclick=function(){navigator.clipboard?navigator.clipboard.writeText(u).then(function(){$('b').textContent='✓ Kopyalandı, İzci ARA kutusuna yapıştır'},function(){prompt('Kopyala:',u)}):prompt('Kopyala:',u)}}</script></html>
+$('b').onclick=function(){navigator.clipboard?navigator.clipboard.writeText(u).then(function(){$('b').textContent='✓ Kopyalandı, İzci ARA kutusuna yapıştır'},function(){prompt('Kopyala:',u)}):prompt('Kopyala:',u)}}}
+</script></html>
