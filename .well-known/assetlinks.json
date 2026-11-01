@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.yuruyus.haritam",
+    "sha256_cert_fingerprints": ["5F:B3:EF:00:C3:88:98:F1:C0:90:1B:2C:CA:ED:58:B8:2C:72:4B:6E:E8:67:10:A5:62:3D:EA:2F:6D:D5:74:99"]
+  }
+}]
