@@ -1,77 +1,14 @@
-<!doctype html>
-<html lang="tr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>İzci ile yönlendirme</title>
-<meta name="theme-color" content="#14281d">
-<style>
-:root{color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:linear-gradient(160deg,#0b1f15,#1b4332);color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}
-.card{width:100%;max-width:440px;background:#14281df2;border:1px solid #ffffff22;border-radius:22px;padding:22px 18px;box-shadow:0 10px 40px #0008}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-.brand svg{width:46px;height:46px;flex:none}
-.brand b{font-size:26px;letter-spacing:-.5px}.brand small{display:block;color:#95d5b2;font-size:12px}
-h1{font-size:15px;color:#95d5b2;margin:0 0 6px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
-.place{font-size:22px;font-weight:800;margin:0 0 4px;word-break:break-word}
-.coord{font:13px ui-monospace,Menlo,monospace;color:#d8f3dc;margin:0 0 18px}
-a.btn,button.btn{display:block;width:100%;text-align:center;text-decoration:none;border:0;border-radius:14px;padding:16px 10px;font-size:16px;font-weight:700;margin:10px 0 0;cursor:pointer;font-family:inherit}
-.go{background:#2ee66b;color:#00210f;font-size:18px;padding:18px 10px}
-.sec{background:#ffffff1c;color:#fff}
-.hint{font-size:12px;color:#ffffffaa;line-height:1.5;margin:14px 0 0}
-.hide{display:none}
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="brand">
-    <svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="11" fill="#1b4332"/><circle cx="24" cy="24" r="18" fill="none" stroke="#95d5b2" stroke-width="2"/><path d="M11 32 21 17l5 7 4-5 8 13z" fill="#95d5b2"/><circle cx="35" cy="14" r="3.2" fill="#ffd166"/><polygon points="24,3 21,9 27,9" fill="#ef233c"/></svg>
-    <div><b>İzci</b><small>Sinyalin yoksa da yolunu bul</small></div>
-  </div>
-
-  <div id="has" class="hide">
-    <h1>Yönlendirme isteği</h1>
-    <p class="place" id="name"></p>
-    <p class="coord" id="coord"></p>
-    <a class="btn go" id="open" href="#">▶ İzci'de yönlendirmeyi başlat</a>
-    <a class="btn sec" id="gm" href="#">🗺 Google Haritalar'da aç</a>
-    <button class="btn sec" id="copy">📋 İzci bağlantısını kopyala</button>
-    <p class="hint" id="hint">İzci uygulaması yüklüyse yukarıdaki yeşil düğme onu açar ve rotayı kurar. Yüklü değilse Google Haritalar açılır. Düğme çalışmazsa bağlantıyı kopyalayıp İzci'de <b>ARA</b> kutusuna yapıştır.</p>
-  </div>
-
-  <div id="none" class="hide">
-    <h1>İzci</h1>
-    <p class="place">Konum bulunamadı</p>
-    <p class="hint">Bu sayfa, İzci uygulamasından paylaşılan yönlendirme bağlantıları içindir. Bağlantıda konum bilgisi (enlem ve boylam) yok.</p>
-  </div>
-</div>
-<script>
-(function(){
-  var q=new URLSearchParams(location.search),lat=parseFloat(q.get('lat')),lng=parseFloat(q.get('lng')),
-      name=(q.get('name')||'Paylaşılan konum').slice(0,120),mode=q.get('mode');
-  if(['car','foot','bike'].indexOf(mode)<0)mode='car';
-  var ok=isFinite(lat)&&isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180&&!(lat===0&&lng===0);
-  var $=function(i){return document.getElementById(i)};
-  if(!ok){$('none').className='';return}
-  $('has').className='';
-  $('name').textContent=name;
-  $('coord').textContent=lat.toFixed(5)+', '+lng.toFixed(5);
-  var qs='lat='+lat.toFixed(6)+'&lng='+lng.toFixed(6)+'&name='+encodeURIComponent(name)+'&mode='+mode;
-  var scheme='izci://nav?'+qs;
-  var maps='https://maps.google.com/?q='+lat.toFixed(6)+','+lng.toFixed(6);
-  var android=/android/i.test(navigator.userAgent);
-  // Android: uygulama yüklüyse açar, yüklü değilse Google Haritalar'a düşer
-  var intent='intent://nav?'+qs+'#Intent;scheme=izci;package=com.yuruyus.haritam;S.browser_fallback_url='+encodeURIComponent(maps)+';end';
-  $('open').href=android?intent:scheme;
-  $('gm').href=maps;
-  if(!android){$('hint').innerHTML='Bu bağlantı Android telefondaki İzci uygulaması içindir. Burada Google Haritalar\'dan konuma bakabilirsin.';$('open').className='btn sec';$('open').textContent='İzci bağlantısını aç'}
-  $('copy').onclick=function(){
-    var done=function(){$('copy').textContent='✓ Kopyalandı. İzci\'de ARA\'ya yapıştır'};
-    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(scheme).then(done,function(){prompt('Kopyala:',scheme)});
-    else prompt('Kopyala:',scheme);
-  };
-})();
-</script>
-</body>
-</html>
+<!doctype html><html lang="tr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>İzci</title>
+<style>body{margin:0;min-height:100vh;background:#14281d;color:#fff;font:16px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:18px}.c{width:100%;max-width:420px;background:#1f3d2c;border-radius:20px;padding:22px 18px}h1{margin:0 0 4px;font-size:26px}small{color:#95d5b2}h2{font-size:22px;margin:14px 0 2px}p{font:13px monospace;color:#d8f3dc;margin:4px 0}a,button{display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;border:0;border-radius:14px;padding:15px;margin-top:10px;font:700 16px system-ui;background:#ffffff22;color:#fff}.g{background:#2ee66b;color:#00210f;font-size:18px;padding:18px}.h{display:none}.t{font:13px system-ui;color:#fffc;line-height:1.5}</style>
+<div class=c><h1>İzci</h1><small>Sinyalin yoksa da yolunu bul</small>
+<div id=y class=h><h2 id=n></h2><p id=k></p><p id=f></p><a id=o class=g>▶ İzci'de yönlendirmeyi başlat</a><a id=m>🗺 Google Haritalar'da aç</a><button id=b>📋 İzci bağlantısını kopyala</button>
+<p class=t>İzci yüklüyse yeşil düğme açar ve rotayı kurar, değilse Google Haritalar açılır. Düğme çalışmazsa bağlantıyı kopyalayıp İzci'de ARA kutusuna yapıştır.</p></div>
+<div id=z class=h><h2>Paylaşılan konum ve rota bağlantıları</h2><p class=t>Bu adres, İzci uygulamasından paylaşılan konum ve rota bağlantılarını açar. Birinin sana gönderdiği bağlantıya dokunduğunda buradan İzci açılır ve yönlendirme kurulur.</p><p class=t>Bu sayfayı bağlantı olmadan açtığın için gösterilecek bir konum yok.</p></div></div>
+<script>var q=new URLSearchParams(location.search),a=+q.get('lat'),l=+q.get('lng'),nm=(q.get('name')||'Paylaşılan konum').slice(0,120),md=q.get('mode'),fa=+q.get('flat'),fo=+q.get('flng'),$=function(i){return document.getElementById(i)};
+if(['car','foot','bike'].indexOf(md)<0)md='car';
+var hasF=!!(q.get('flat')&&q.get('flng')&&isFinite(fa)&&isFinite(fo)&&Math.abs(fa)<=90&&Math.abs(fo)<=180);
+if(!(isFinite(a)&&isFinite(l)&&q.get('lat')&&Math.abs(a)<=90&&Math.abs(l)<=180&&(a||l)))$('z').className='';else{$('y').className='';$('n').textContent=nm;$('k').textContent=(hasF?'Varış: ':'')+a.toFixed(5)+', '+l.toFixed(5);if(hasF)$('f').textContent='Başlangıç: '+fa.toFixed(5)+', '+fo.toFixed(5);
+var s='lat='+a.toFixed(6)+'&lng='+l.toFixed(6)+'&name='+encodeURIComponent(nm)+'&mode='+md+(hasF?'&flat='+fa.toFixed(6)+'&flng='+fo.toFixed(6):''),u='izci://nav?'+s,g='https://maps.google.com/?q='+a.toFixed(6)+','+l.toFixed(6);
+if(hasF)g='https://www.google.com/maps/dir/?api=1&origin='+fa.toFixed(6)+','+fo.toFixed(6)+'&destination='+a.toFixed(6)+','+l.toFixed(6)+'&travelmode='+({car:'driving',foot:'walking',bike:'bicycling'}[md]);
+$('o').href=/android/i.test(navigator.userAgent)?'intent://nav?'+s+'#Intent;scheme=izci;package=com.yuruyus.haritam;S.browser_fallback_url='+encodeURIComponent(g)+';end':u;$('m').href=g;
+$('b').onclick=function(){navigator.clipboard?navigator.clipboard.writeText(u).then(function(){$('b').textContent='✓ Kopyalandı, İzci ARA kutusuna yapıştır'},function(){prompt('Kopyala:',u)}):prompt('Kopyala:',u)}}</script></html>
