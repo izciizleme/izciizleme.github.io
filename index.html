@@ -20,14 +20,15 @@ if(LID&&/^[a-z0-9]{16,40}$/.test(LID)&&/^[a-z0-9.-]+\.(firebasedatabase\.app|fir
  function rem(ms){if(ms>3.2e10)return 'süresiz';var m=Math.max(0,Math.round(ms/60000)),d=Math.floor(m/1440),h=Math.floor(m%1440/60);return d?d+' g '+h+' sa':h?h+' sa '+(m%60)+' dk':m+' dk'}
  function poll(){
   fetch('https://'+LDB+'/live/'+LID+'.json').then(function(r){return r.json()}).then(function(j){
-   if(!j||!j.lat||(j.exp&&Date.now()>j.exp)){$('li').innerHTML='<b>Paylaşım sona erdi</b><div class=s>Bu canlı konum durduruldu, süresi doldu ya da bağlantı geçersiz.</div>';clearInterval(timer);return}
+   var ended=!!(j&&(j.ended||(j.exp&&Date.now()>j.exp))),endT=j?(j.ended?j.endT:j.exp):0,until=j&&j.keep?endT+j.keep:0;
+   if(!j||!j.lat||(ended&&(!until||Date.now()>until))){$('li').innerHTML='<b>Paylaşım sona erdi</b><div class=s>Bu canlı konum durduruldu, süresi doldu ya da bağlantı geçersiz.</div>';clearInterval(timer);return}
    var ll=[j.lat,j.lng];layer.clearLayers();
    L.marker(ll,{icon:pinIcon}).addTo(layer);
    if(j.acc>20)L.circle(ll,{radius:j.acc,weight:1,color:'#ff7b00',fillOpacity:.1}).addTo(layer);
    if(j.trail&&j.trail.length>1)L.polyline(j.trail.map(function(p){return[p[0],p[1]]}),{color:'#ff7b00',weight:4,opacity:.9}).addTo(layer);
    last=ll;if(first){first=false;map.setView(ll,16)}
-   var ago=Math.max(0,Math.round((Date.now()-j.t)/1000)),at=ago<90?ago+' sn önce':Math.round(ago/60)+' dk önce';
-   $('li').innerHTML='<div class=row><div style="flex:1"><b>📍 '+esc(j.name||'Canlı konum')+'</b><div class=s>'+at+(ago>300?' <span class=w>(bağlantı kopmuş olabilir)</span>':'')+'</div><div class=s>'+(j.acc?'±'+j.acc+' m · ':'')+(j.spd||0)+' km/sa'+(j.bat!=null?' · 🔋%'+j.bat:'')+(j.exp&&j.exp<Date.now()+3.2e10?' · kalan '+rem(j.exp-Date.now()):'')+'</div></div></div>'+
+   var ago=Math.max(0,Math.round((Date.now()-j.t)/1000)),at=ago<90?ago+' sn önce':ago<5400?Math.round(ago/60)+' dk önce':Math.round(ago/3600)+' sa önce';
+   $('li').innerHTML=(ended?'<div class=row><div style="flex:1"><b>⏹ '+esc(j.name||'Canlı konum')+'</b> <span class=w>paylaşım sona erdi</span><div class=s>Son bilinen konum · '+at+'</div><div class=s>Bu konum '+rem(until-Date.now())+' daha görünür</div></div></div>':'<div class=row><div style="flex:1"><b>📍 '+esc(j.name||'Canlı konum')+'</b><div class=s>'+at+(ago>300?' <span class=w>(bağlantı kopmuş olabilir)</span>':'')+'</div><div class=s>'+(j.acc?'±'+j.acc+' m · ':'')+(j.spd||0)+' km/sa'+(j.bat!=null?' · 🔋%'+j.bat:'')+(j.exp&&j.exp<Date.now()+3.2e10?' · kalan '+rem(j.exp-Date.now()):'')+'</div></div></div>')+
     '<a class=g href="https://www.google.com/maps/dir/?api=1&destination='+j.lat+','+j.lng+'" style="background:#2ee66b;color:#00210f">🚗 Google Haritalar ile yol tarifi</a>';
   }).catch(function(){});
  }
